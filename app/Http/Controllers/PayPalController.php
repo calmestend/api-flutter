@@ -6,18 +6,19 @@ use Illuminate\Http\Request;
 use Srmklive\PayPal\Services\PayPal as PayPalClient;
 use App\Models\Cart;
 use App\Models\Purchase;
-use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 class PayPalController extends Controller
 {
-    public function createPayment()
+    public function createPayment($userId)
     {
         $provider = new PayPalClient;
         $provider->setApiCredentials(config('paypal'));
         $token = $provider->getAccessToken();
         $provider->setAccessToken($token);
 
-        $cart = Auth::user()->cart;
+        $user = User::findOrFail($userId);
+        $cart = $user->cart;
         $total = $cart->products->sum(function ($product) {
             return $product->pivot->quantity * $product->price;
         });
@@ -31,6 +32,10 @@ class PayPalController extends Controller
                         "value" => $total
                     ]
                 ]
+            ],
+            "application_context" => [
+                "return_url" => route('paypal.capture', ['userId' => $user->id]),
+                "cancel_url" => route('paypal.error')
             ]
         ]);
 
@@ -40,14 +45,15 @@ class PayPalController extends Controller
                     return redirect($link['href']);
                 }
             }
-
             return redirect()->route('paypal.error');
         } else {
             return redirect()->route('paypal.error');
         }
     }
 
-    public function capturePayment(Request $request)
+
+
+    public function capturePayment(Request $request, $userId)
     {
         $provider = new PayPalClient;
         $provider->setApiCredentials(config('paypal'));
@@ -57,9 +63,10 @@ class PayPalController extends Controller
         $response = $provider->capturePaymentOrder($request->token);
 
         if (isset($response['status']) && $response['status'] == 'COMPLETED') {
-            $cart = Auth::user()->cart;
+            $user = User::findOrFail($userId);
+            $cart = $user->cart;
             $purchase = Purchase::create([
-                'user_id' => Auth::id(),
+                'user_id' => $user->id,
                 'total' => $cart->products->sum(function ($product) {
                     return $product->pivot->quantity * $product->price;
                 }),
@@ -76,11 +83,10 @@ class PayPalController extends Controller
 
     public function success()
     {
-        return view('paypal.success');
+        return response()->json(['status' => 'success']);
     }
 
-    public function error()
-    {
+    public function error() {
         return view('paypal.error');
     }
 }
