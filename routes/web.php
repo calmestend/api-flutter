@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\PayPalController;
+use App\Http\Controllers\PurchaseController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -21,6 +22,8 @@ Route::get('paypal/create/{userId}', [PayPalController::class, 'createPayment'])
 Route::get('paypal/capture/{userId}', [PayPalController::class, 'capturePayment'])->name('paypal.capture');
 Route::get('paypal/success', [PayPalController::class, 'success'])->name('paypal.success');
 Route::get('paypal/error', [PayPalController::class, 'error'])->name('paypal.error');
+
+Route::get('purchases/user/{userId}', [PurchaseController::class, 'getUserPurchaseHistory']);
 
 Route::get('/dashboard', function () {
     return view('dashboard');
