@@ -65,4 +65,12 @@ Route::middleware('auth')->group(function () {
     Route::post('cart/remove/{product}', [CartController::class, 'removeProduct']);
 
     Route::post('cart/update/{product}', [CartController::class, 'updateProduct']);
+
+    Route::get('paypal/create', [PayPalController::class, 'createPayment'])->name('paypal.create');
+
+    Route::get('paypal/capture', [PayPalController::class, 'capturePayment'])->name('paypal.capture');
+
+    Route::get('paypal/success', [PayPalController::class, 'success'])->name('paypal.success');
+
+    Route::get('paypal/error', [PayPalController::class, 'error'])->name('paypal.error');
 });
